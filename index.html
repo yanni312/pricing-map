@@ -61,11 +61,15 @@
       { name: "ANCASTER, ON", lat: 43.2084, lng: -80.0016, tanker: "$365.00", large: "$195.00", small: "$130.00" },
       { name: "CAMPBELL RD, BRANT, ON", lat: 43.1182, lng: -80.1572, tanker: "$365.00", large: "$195.00", small: "$130.00" },
       { name: "COPETOWN, ON", lat: 43.2434, lng: -80.0561, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      // Add all other locations here...
-      { name: "OAKVILLE", lat: 43.4761, lng: -79.6803, tanker: "$790.00", large: "$550.00", small: "$550.00" }
+      { name: "GREENVILLE, ON", lat: 43.2902, lng: -79.9974, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "LYNDEN, ON", lat: 43.2387, lng: -80.1475, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "BRANTFORD", lat: 43.1484, lng: -80.2102, tanker: "$410.00", large: "$235.00", small: "$150.00" },
+      { name: "DUNDAS", lat: 43.2746, lng: -79.9421, tanker: "$410.00", large: "$235.00", small: "$150.00" },
+      { name: "OAKVILLE", lat: 43.4761, lng: -79.6803, tanker: "$790.00", large: "$550.00", small: "$550.00" },
+      // Add remaining locations here...
     ];
 
-    const map = L.map("map").setView([44.3108138, -79.5415234], 10);
+    const map = L.map("map").setView([43.1484, -80.2102], 10);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
@@ -141,16 +145,17 @@
       console.log("User Coordinates:", lat, lng); // Debugging log
 
       markers.forEach(marker => {
-        const distance = haversine(lat, lng, marker.lat, marker.lng);
-        console.log(`Distance to ${marker.name}: ${distance} km`); // Debugging log
+        const distance = haversine(lat, lng, marker.lat, marker.lng); // Calculate distance
+        console.log(`Distance to ${marker.name}: ${distance.toFixed(2)} km`); // Log distance
 
         if (distance < minDistance) {
           minDistance = distance;
           closestMarker = marker;
+          console.log(`New closest marker: ${marker.name}, Distance: ${distance.toFixed(2)} km`);
         }
       });
 
-      console.log("Closest Marker:", closestMarker); // Debugging log
+      console.log("Closest Marker Found:", closestMarker); // Final closest marker
 
       if (closestMarker) {
         map.setView([lat, lng], 14);
@@ -177,7 +182,7 @@
       const R = 6371; // Earth's radius in km
       const toRad = angle => (angle * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lat2 - lon1);
+      const dLon = toRad(lon2 - lon1);
 
       const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
@@ -186,5 +191,8 @@
       return R * c; // Distance in km
     }
   </script>
+</body>
+</html>
+
 </body>
 </html>
