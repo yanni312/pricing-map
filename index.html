@@ -59,9 +59,14 @@
 
     const markers = [
       { name: "ANCASTER, ON", lat: 43.2084, lng: -80.0016, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "CAMPBELL RD, BRANT, ON", lat: 43.1182, lng: -80.1572, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "COPETOWN, ON", lat: 43.2434, lng: -80.0561, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "GREENVILLE, ON", lat: 43.2902, lng: -79.9974, tanker: "$365.00", large: "$195.00", small: "$130.00" },
+      { name: "LYNDEN, ON", lat: 43.2387, lng: -80.1475, tanker: "$365.00", large: "$195.00", small: "$130.00" },
       { name: "BRANTFORD", lat: 43.1484, lng: -80.2102, tanker: "$410.00", large: "$235.00", small: "$150.00" },
+      { name: "DUNDAS", lat: 43.2746, lng: -79.9421, tanker: "$410.00", large: "$235.00", small: "$150.00" },
       { name: "OAKVILLE", lat: 43.4761, lng: -79.6803, tanker: "$790.00", large: "$550.00", small: "$550.00" },
-      // Add other locations as needed
+      // Add remaining locations here...
     ];
 
     const map = L.map("map").setView([43.1484, -80.2102], 10);
@@ -91,21 +96,40 @@
     // Call FSC calculation on load
     fetchFuelSurcharge();
 
-    async function fetchSuggestions(input) {
+    async function fetchAutocomplete(input) {
       try {
         const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-        const suggestions = await response.json();
-        return suggestions;
+        const data = await response.json();
+        if (data.predictions) {
+          const suggestions = data.predictions.map(prediction => prediction.description);
+          updateSuggestionsUI(suggestions);
+        }
       } catch (error) {
         console.error("Error fetching autocomplete suggestions:", error);
-        return [];
       }
+    }
+
+    function updateSuggestionsUI(suggestions) {
+      const suggestionsList = document.getElementById("suggestions");
+      suggestionsList.innerHTML = "";
+
+      suggestions.forEach(suggestion => {
+        const listItem = document.createElement("li");
+        listItem.textContent = suggestion;
+        listItem.onclick = () => handleSuggestionClick(suggestion);
+        suggestionsList.appendChild(listItem);
+      });
+    }
+
+    function handleSuggestionClick(selectedAddress) {
+      document.getElementById("addressInput").value = selectedAddress;
+      document.getElementById("suggestions").innerHTML = "";
+      fetchGeocode(selectedAddress);
     }
 
     async function fetchGeocode(address) {
       try {
-        const response = await fetch(`${apiUrl}?address=${encodeURIComponent(address)}`);
+        const response = await fetch(`${apiUrl}?action=geocode&address=${encodeURIComponent(address)}`);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
         if (data.lat && data.lng) findClosestLocation(data.lat, data.lng, address);
@@ -114,40 +138,15 @@
       }
     }
 
-    function displaySuggestions(suggestions) {
-      const suggestionsList = document.getElementById("suggestions");
-      suggestionsList.innerHTML = "";
-
-      suggestions.forEach(suggestion => {
-        const li = document.createElement("li");
-        li.textContent = suggestion.description;
-        li.addEventListener("click", () => {
-          fetchGeocode(suggestion.description);
-          suggestionsList.innerHTML = ""; // Clear suggestions after selection
-          document.getElementById("addressInput").value = suggestion.description;
-        });
-        suggestionsList.appendChild(li);
-      });
-    }
-
-    async function handleInput(event) {
-      const input = event.target.value;
-      if (input.length > 2) {
-        const suggestions = await fetchSuggestions(input);
-        displaySuggestions(suggestions);
-      }
-    }
-
     function findClosestLocation(lat, lng, address) {
       let closestMarker = null;
       let minDistance = Infinity;
 
-      console.log("User Coordinates:", lat, lng);
+      console.log("User Coordinates:", lat, lng); // Debugging log
 
       markers.forEach(marker => {
-        console.log(`Marker: ${marker.name}, Coordinates: (${marker.lat}, ${marker.lng})`);
-        const distance = haversine(lat, lng, marker.lat, marker.lng);
-        console.log(`Distance to ${marker.name}: ${distance.toFixed(2)} km`);
+        const distance = haversine(lat, lng, marker.lat, marker.lng); // Calculate distance
+        console.log(`Distance to ${marker.name}: ${distance.toFixed(2)} km`); // Log distance
 
         if (distance < minDistance) {
           minDistance = distance;
@@ -156,7 +155,7 @@
         }
       });
 
-      console.log("Closest Marker Found:", closestMarker);
+      console.log("Closest Marker Found:", closestMarker); // Final closest marker
 
       if (closestMarker) {
         map.setView([lat, lng], 14);
@@ -164,10 +163,9 @@
           .setLatLng([lat, lng])
           .setContent(
             `<b>Your Address:</b> ${address}<br><b>Closest Location:</b> ${closestMarker.name}<br><b>Pricing:</b><br>
-             Tanker: ${closestMarker.tanker}<br>
-             Large: ${closestMarker.large}<br>
-             Small: ${closestMarker.small}<br>
-             FSC: $${currentFuelSurcharge}`
+             Tanker: ${closestMarker.tanker} + FSC: $${currentFuelSurcharge}<br>
+             Large: ${closestMarker.large} + FSC: $${currentFuelSurcharge}<br>
+             Small: ${closestMarker.small} + FSC: $${currentFuelSurcharge}`
           )
           .openOn(map);
       } else {
@@ -175,10 +173,14 @@
       }
     }
 
+    document.getElementById("addressInput").addEventListener("input", event => {
+      const input = event.target.value;
+      if (input.length > 2) fetchAutocomplete(input);
+    });
+
     function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371; // Earth's radius in km
       const toRad = angle => (angle * Math.PI) / 180;
-
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
 
@@ -186,14 +188,8 @@
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // Distance in km
-
-      console.log(`Haversine Inputs: lat1=${lat1}, lon1=${lon1}, lat2=${lat2}, lon2=${lon2}`);
-      console.log(`Calculated Distance: ${distance.toFixed(2)} km`);
-      return distance;
+      return R * c; // Distance in km
     }
-
-    document.getElementById("addressInput").addEventListener("input", handleInput);
   </script>
 </body>
 </html>
