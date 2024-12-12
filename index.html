@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pricing Map</title>
+  <title>Secure Pricing Map</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -12,11 +12,6 @@
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   ></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
     #map {
       height: 500px;
       width: 100%;
@@ -28,39 +23,41 @@
       font-size: 16px;
       display: block;
     }
-    button {
-      display: block;
-      margin: 10px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 5px;
+    #suggestions {
+      width: 80%;
+      margin: 0 auto;
+      list-style: none;
+      padding: 0;
+      background: #fff;
+      border: 1px solid #ccc;
+      position: relative;
+      z-index: 1000;
+    }
+    #suggestions li {
+      padding: 10px;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #0056b3;
+    #suggestions li:hover {
+      background: #f0f0f0;
     }
   </style>
 </head>
 <body>
-  <h1 style="text-align: center;">Pricing Map</h1>
+  <h1 style="text-align: center;">Secure Pricing Map</h1>
   <input
     type="text"
     id="addressInput"
-    placeholder="Enter your address"
-    style="width: 80%; margin: auto; display: block;"
+    placeholder="Start typing your address..."
   />
-  <button onclick="findClosestLocation()">Find Closest Location</button>
+  <ul id="suggestions"></ul>
   <div id="map"></div>
 
   <script>
-    const apiUrl = "https://wxmvp2w2qi.execute-api.us-east-2.amazonaws.com/GeocodeAddress";
+    const apiUrl = "https://your-api-gateway-id.execute-api.us-east-2.amazonaws.com/GeocodeAddress";
 
     const markers = [
-      { name: "Location 1", lat: 44.310, lng: -79.540, price: "$365" },
-      { name: "Location 2", lat: 43.650, lng: -79.380, price: "$400" },
+      { name: "Location 1", lat: 44.310, lng: -79.540, tanker: "$365", large: "$195", small: "$130" },
+      { name: "Location 2", lat: 43.650, lng: -79.380, tanker: "$400", large: "$215", small: "$150" },
     ];
 
     const map = L.map("map").setView([44.3108138, -79.5415234], 10);
@@ -70,8 +67,9 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
+    // Haversine formula for distance calculation
     function haversine(lat1, lon1, lat2, lon2) {
-      const R = 6371;
+      const R = 6371; // Earth's radius in km
       const toRad = angle => (angle * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
@@ -83,53 +81,93 @@
           Math.sin(dLon / 2) *
           Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      return R * c; // Distance in km
     }
 
-    async function findClosestLocation() {
-      const address = document.getElementById("addressInput").value;
-
-      if (!address) {
-        alert("Please enter an address.");
-        return;
-      }
-
+    // Fetch autocomplete suggestions
+    async function fetchAutocomplete(input) {
       try {
-        const response = await fetch(`${apiUrl}?address=${encodeURIComponent(address)}`);
+        const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
+        const data = await response.json();
+        const suggestions = data.predictions.map(prediction => prediction.description);
+        updateSuggestionsUI(suggestions);
+      } catch (error) {
+        console.error("Error fetching autocomplete suggestions:", error);
+      }
+    }
+
+    // Update suggestions UI
+    function updateSuggestionsUI(suggestions) {
+      const suggestionsList = document.getElementById("suggestions");
+      suggestionsList.innerHTML = ""; // Clear previous suggestions
+
+      suggestions.forEach(suggestion => {
+        const listItem = document.createElement("li");
+        listItem.textContent = suggestion;
+        listItem.onclick = () => handleSuggestionClick(suggestion);
+        suggestionsList.appendChild(listItem);
+      });
+    }
+
+    // Handle suggestion click
+    function handleSuggestionClick(selectedAddress) {
+      document.getElementById("addressInput").value = selectedAddress;
+      document.getElementById("suggestions").innerHTML = ""; // Clear suggestions
+      fetchGeocode(selectedAddress);
+    }
+
+    // Fetch geocode data
+    async function fetchGeocode(address) {
+      try {
+        const response = await fetch(`${apiUrl}?action=geocode&address=${encodeURIComponent(address)}`);
         const data = await response.json();
 
         if (data.lat && data.lng) {
-          let closestMarker = null;
-          let minDistance = Infinity;
-
-          markers.forEach(marker => {
-            const distance = haversine(data.lat, data.lng, marker.lat, marker.lng);
-            if (distance < minDistance) {
-              minDistance = distance;
-              closestMarker = marker;
-            }
-          });
-
-          if (closestMarker) {
-            map.setView([data.lat, data.lng], 14);
-            L.popup()
-              .setLatLng([data.lat, data.lng])
-              .setContent(
-                `<b>Your Address:</b> ${address}<br><b>Pricing:</b><br>Tanker: ${closestMarker.price}`
-              )
-              .openOn(map);
-          } else {
-            alert("No locations found near your address.");
-          }
+          findClosestLocation(data.lat, data.lng, address);
         } else {
-          alert("Unable to geocode the address. Please try again.");
+          alert("Unable to geocode the address.");
         }
       } catch (error) {
-        console.error("Error fetching geocoded data:", error);
-        alert("An error occurred. Please try again later.");
+        console.error("Error fetching geocode data:", error);
       }
     }
+
+    // Find the closest marker
+    function findClosestLocation(lat, lng, address) {
+      let closestMarker = null;
+      let minDistance = Infinity;
+
+      markers.forEach(marker => {
+        const distance = haversine(lat, lng, marker.lat, marker.lng);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestMarker = marker;
+        }
+      });
+
+      if (closestMarker) {
+        map.setView([lat, lng], 14);
+        L.popup()
+          .setLatLng([lat, lng])
+          .setContent(
+            `<b>Your Address:</b> ${address}<br><b>Pricing:</b><br>
+             Tanker: ${closestMarker.tanker}<br>
+             Large: ${closestMarker.large}<br>
+             Small: ${closestMarker.small}`
+          )
+          .openOn(map);
+      } else {
+        alert("No locations found near your address.");
+      }
+    }
+
+    // Add input event listener for autocomplete
+    document.getElementById("addressInput").addEventListener("input", event => {
+      const input = event.target.value;
+      if (input.length > 2) {
+        fetchAutocomplete(input);
+      }
+    });
   </script>
 </body>
 </html>
-
