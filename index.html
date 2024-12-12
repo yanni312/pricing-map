@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure Pricing Map</title>
+  <title>Pricing Map</title>
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -43,7 +43,7 @@
   </style>
 </head>
 <body>
-  <h1 style="text-align: center;">Secure Pricing Map</h1>
+  <h1 style="text-align: center;">Pricing Map</h1>
   <input
     type="text"
     id="addressInput"
@@ -67,36 +67,21 @@
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    // Haversine formula for distance calculation
-    function haversine(lat1, lon1, lat2, lon2) {
-      const R = 6371; // Earth's radius in km
-      const toRad = angle => (angle * Math.PI) / 180;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(toRad(lat1)) *
-          Math.cos(toRad(lat2)) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // Distance in km
-    }
-
-    // Fetch autocomplete suggestions
     async function fetchAutocomplete(input) {
       try {
         const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
         const data = await response.json();
-        const suggestions = data.predictions.map(prediction => prediction.description);
-        updateSuggestionsUI(suggestions);
+        if (data.predictions) {
+          const suggestions = data.predictions.map(prediction => prediction.description);
+          updateSuggestionsUI(suggestions);
+        } else {
+          alert("No autocomplete suggestions found.");
+        }
       } catch (error) {
         console.error("Error fetching autocomplete suggestions:", error);
       }
     }
 
-    // Update suggestions UI
     function updateSuggestionsUI(suggestions) {
       const suggestionsList = document.getElementById("suggestions");
       suggestionsList.innerHTML = ""; // Clear previous suggestions
@@ -109,30 +94,30 @@
       });
     }
 
-    // Handle suggestion click
     function handleSuggestionClick(selectedAddress) {
       document.getElementById("addressInput").value = selectedAddress;
       document.getElementById("suggestions").innerHTML = ""; // Clear suggestions
       fetchGeocode(selectedAddress);
     }
 
-    // Fetch geocode data
     async function fetchGeocode(address) {
       try {
         const response = await fetch(`${apiUrl}?action=geocode&address=${encodeURIComponent(address)}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
         const data = await response.json();
-
         if (data.lat && data.lng) {
           findClosestLocation(data.lat, data.lng, address);
         } else {
-          alert("Unable to geocode the address.");
+          alert("No geocode data found.");
         }
       } catch (error) {
         console.error("Error fetching geocode data:", error);
+        alert("Failed to fetch geocode data.");
       }
     }
 
-    // Find the closest marker
     function findClosestLocation(lat, lng, address) {
       let closestMarker = null;
       let minDistance = Infinity;
@@ -161,13 +146,31 @@
       }
     }
 
-    // Add input event listener for autocomplete
     document.getElementById("addressInput").addEventListener("input", event => {
       const input = event.target.value;
       if (input.length > 2) {
         fetchAutocomplete(input);
       }
     });
+
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in km
+      const toRad = angle => (angle * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // Distance in km
+    }
   </script>
+</body>
+</html>
+
 </body>
 </html>
