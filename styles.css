@@ -1,6 +1,7 @@
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  font-size: 16px; /* Default font size for desktop */
 }
 
 h1 {
@@ -14,6 +15,7 @@ h1 {
 
 #map {
   height: 70vh; /* Takes 70% of the screen height */
+  min-height: 300px; /* Ensures usability on small screens */
   width: 100%;
 }
 
@@ -39,6 +41,7 @@ h1 {
   z-index: 1000;
   max-height: 150px; /* Add scrolling if too many suggestions */
   overflow-y: auto;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
 }
 
 #suggestions li {
@@ -49,6 +52,13 @@ h1 {
 
 #suggestions li:hover {
   background: #f0f0f0;
+}
+
+/* Focus styles for accessibility */
+#addressInput:focus,
+#suggestions li:focus {
+  outline: 2px solid #0078D7; /* Matches header color */
+  outline-offset: 2px;
 }
 
 /* Responsive styles */
@@ -71,6 +81,10 @@ h1 {
 }
 
 @media (max-width: 480px) {
+  body {
+    font-size: 14px; /* Adjust base font size for smaller screens */
+  }
+
   h1 {
     font-size: 1rem;
     padding: 6px;
@@ -79,6 +93,7 @@ h1 {
   #addressInput {
     font-size: 12px;
     padding: 6px;
+    margin: 5px auto;
   }
 
   #suggestions li {
