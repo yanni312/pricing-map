@@ -18,32 +18,33 @@
   ></script>
 </head>
 <body>
-  <h1 style="text-align: center;">Pricing Map with FSC</h1>
+  <h1>Pricing Map with FSC</h1>
   <input
     type="text"
     id="addressInput"
     placeholder="Start typing your address..."
+    aria-label="Address input"
   />
-  <ul id="suggestions"></ul>
-  <div id="map"></div>
+  <ul id="suggestions" role="listbox"></ul>
+  <div id="map" aria-label="Map"></div>
 
   <script>
     const apiUrl = "https://wxmvp2w2qi.execute-api.us-east-2.amazonaws.com/GeocodeAddress";
     const locationsUrl = "https://raw.githubusercontent.com/yanni312/pricing-map/main/locations.json";
 
-    let currentFuelSurcharge = 0; // Initialize FSC
-    let markers = []; // Will hold the dynamically fetched locations
-
+    let currentFuelSurcharge = 0;
+    let markers = [];
     const map = L.map("map").setView([43.1484, -80.2102], 10);
 
+    // Load tiles for the map
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    // Function to fetch FSC (simulated for now)
+    // Fetch fuel surcharge
     function fetchFuelSurcharge() {
-      const simulatedDieselPrice = 1.58; // Example diesel price for Southern Ontario
+      const simulatedDieselPrice = 1.58;
       let surcharge = 0;
 
       if (simulatedDieselPrice >= 1.00 && simulatedDieselPrice <= 1.47) {
@@ -58,34 +59,34 @@
       console.log(`Current FSC: $${surcharge}`);
     }
 
-    // Call FSC calculation on load
     fetchFuelSurcharge();
 
-    // Fetch location data from JSON file
+    // Fetch locations
     async function fetchLocations() {
       try {
         const response = await fetch(locationsUrl);
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         markers = await response.json();
-        console.log("Fetched Locations:", markers); // Debugging log
+        console.log("Fetched Locations:", markers);
       } catch (error) {
         console.error("Error fetching locations:", error);
       }
     }
 
+    // Fetch autocomplete suggestions
     async function fetchAutocomplete(input) {
       try {
         const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
         const data = await response.json();
         if (data.predictions) {
-          const suggestions = data.predictions.map(prediction => prediction.description);
-          updateSuggestionsUI(suggestions);
+          updateSuggestionsUI(data.predictions.map(prediction => prediction.description));
         }
       } catch (error) {
         console.error("Error fetching autocomplete suggestions:", error);
       }
     }
 
+    // Update the suggestions UI
     function updateSuggestionsUI(suggestions) {
       const suggestionsList = document.getElementById("suggestions");
       suggestionsList.innerHTML = "";
@@ -93,17 +94,20 @@
       suggestions.forEach(suggestion => {
         const listItem = document.createElement("li");
         listItem.textContent = suggestion;
+        listItem.role = "option";
         listItem.onclick = () => handleSuggestionClick(suggestion);
         suggestionsList.appendChild(listItem);
       });
     }
 
+    // Handle suggestion click
     function handleSuggestionClick(selectedAddress) {
       document.getElementById("addressInput").value = selectedAddress;
       document.getElementById("suggestions").innerHTML = "";
       fetchGeocode(selectedAddress);
     }
 
+    // Fetch geocode data
     async function fetchGeocode(address) {
       try {
         const response = await fetch(`${apiUrl}?action=geocode&address=${encodeURIComponent(address)}`);
@@ -115,24 +119,18 @@
       }
     }
 
+    // Find the closest location
     function findClosestLocation(lat, lng, address) {
       let closestMarker = null;
       let minDistance = Infinity;
 
-      console.log("User Coordinates:", lat, lng); // Debugging log
-
       markers.forEach(marker => {
-        const distance = haversine(lat, lng, marker.lat, marker.lng); // Calculate distance
-        console.log(`Distance to ${marker.name}: ${distance.toFixed(2)} km`); // Log distance
-
+        const distance = haversine(lat, lng, marker.lat, marker.lng);
         if (distance < minDistance) {
           minDistance = distance;
           closestMarker = marker;
-          console.log(`New closest marker: ${marker.name}, Distance: ${distance.toFixed(2)} km`);
         }
       });
-
-      console.log("Closest Marker Found:", closestMarker); // Final closest marker
 
       if (closestMarker) {
         map.setView([lat, lng], 14);
@@ -150,13 +148,23 @@
       }
     }
 
+    // Handle Enter key for address input
+    document.getElementById("addressInput").addEventListener("keyup", event => {
+      if (event.key === "Enter") {
+        const input = event.target.value;
+        fetchGeocode(input);
+      }
+    });
+
+    // Trigger autocomplete on input
     document.getElementById("addressInput").addEventListener("input", event => {
       const input = event.target.value;
       if (input.length > 2) fetchAutocomplete(input);
     });
 
+    // Haversine formula for calculating distances
     function haversine(lat1, lon1, lat2, lon2) {
-      const R = 6371; // Earth's radius in km
+      const R = 6371;
       const toRad = angle => (angle * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
@@ -165,10 +173,10 @@
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; // Distance in km
+      return R * c;
     }
 
-    // Fetch locations when the script is loaded
+    // Load locations
     fetchLocations();
   </script>
 </body>
