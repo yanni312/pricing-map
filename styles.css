@@ -1,0 +1,88 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+h1 {
+  font-size: 1.5rem;
+  padding: 10px;
+  text-align: center;
+  background-color: #0078D7;
+  color: white;
+  margin: 0;
+}
+
+#map {
+  height: 70vh; /* Takes 70% of the screen height */
+  width: 100%;
+}
+
+#addressInput {
+  width: 90%;
+  margin: 10px auto;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  display: block;
+}
+
+#suggestions {
+  width: 90%;
+  margin: 0 auto;
+  list-style: none;
+  padding: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  position: relative;
+  z-index: 1000;
+  max-height: 150px; /* Add scrolling if too many suggestions */
+  overflow-y: auto;
+}
+
+#suggestions li {
+  padding: 10px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+#suggestions li:hover {
+  background: #f0f0f0;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.2rem;
+    padding: 8px;
+  }
+
+  #addressInput {
+    width: 95%;
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  #suggestions li {
+    font-size: 13px;
+    padding: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  h1 {
+    font-size: 1rem;
+    padding: 6px;
+  }
+
+  #addressInput {
+    font-size: 12px;
+    padding: 6px;
+  }
+
+  #suggestions li {
+    font-size: 12px;
+    padding: 6px;
+  }
+}
