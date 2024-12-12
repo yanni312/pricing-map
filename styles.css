@@ -1,7 +1,8 @@
+/* General styles for all devices */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  font-size: 16px; /* Default font size for desktop */
+  font-size: 16px;
 }
 
 h1 {
@@ -14,23 +15,23 @@ h1 {
 }
 
 #map {
-  height: 70vh; /* Takes 70% of the screen height */
-  min-height: 300px; /* Ensures usability on small screens */
+  height: 65vh; /* Adjusted for better fit on mobile */
+  min-height: 250px; /* Ensures usability on very small screens */
   width: 100%;
 }
 
 #addressInput {
-  width: 90%;
-  margin: 10px auto;
-  padding: 10px;
-  font-size: 16px;
+  width: 85%; /* Reduced width for mobile */
+  margin: 8px auto;
+  padding: 8px;
+  font-size: 14px; /* Reduced font size for better fit */
   border: 1px solid #ccc;
   border-radius: 5px;
   display: block;
 }
 
 #suggestions {
-  width: 90%;
+  width: 85%; /* Match the input field width */
   margin: 0 auto;
   list-style: none;
   padding: 0;
@@ -41,13 +42,13 @@ h1 {
   z-index: 1000;
   max-height: 150px; /* Add scrolling if too many suggestions */
   overflow-y: auto;
-  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow for better visibility */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 #suggestions li {
-  padding: 10px;
+  padding: 8px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 #suggestions li:hover {
@@ -61,7 +62,7 @@ h1 {
   outline-offset: 2px;
 }
 
-/* Responsive styles */
+/* Responsive styles for tablets and larger phones */
 @media (max-width: 768px) {
   h1 {
     font-size: 1.2rem;
@@ -69,20 +70,21 @@ h1 {
   }
 
   #addressInput {
-    width: 95%;
+    width: 90%;
     font-size: 14px;
     padding: 8px;
   }
 
   #suggestions li {
-    font-size: 13px;
+    font-size: 12px;
     padding: 8px;
   }
 }
 
+/* Responsive styles for smaller phones */
 @media (max-width: 480px) {
   body {
-    font-size: 14px; /* Adjust base font size for smaller screens */
+    font-size: 14px; /* Adjust base font size */
   }
 
   h1 {
@@ -90,10 +92,20 @@ h1 {
     padding: 6px;
   }
 
+  #map {
+    height: 60vh; /* Further reduce map height for small screens */
+    min-height: 200px;
+  }
+
   #addressInput {
     font-size: 12px;
     padding: 6px;
     margin: 5px auto;
+    width: 95%;
+  }
+
+  #suggestions {
+    width: 95%;
   }
 
   #suggestions li {
