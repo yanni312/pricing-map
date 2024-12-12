@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pricing Map</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha384-sA+qkjAdAYoUt2UsJwltjGpMK6lJ1dvT6YHYUimNox5oxH4+u8I2sp4TDOpnVQ=="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha384-ezrAUmv91XT7eGLv+6pg7er6ZRfA3AYUXHwSpajBGrJThvHAfRygmHPxLCoY9gK4"
+    crossorigin=""
+  ></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+
+    #addressInput {
+      width: 80%;
+      margin: 10px auto;
+      padding: 10px;
+      font-size: 16px;
+      display: block;
+    }
+
+    button {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="text-align: center;">Pricing Map</h1>
+  <input
+    type="text"
+    id="addressInput"
+    placeholder="Enter your address"
+    style="width: 80%; margin: auto; display: block;"
+  />
+  <button onclick="findClosestLocation()">Find Closest Location</button>
+  <div id="map"></div>
+
+  <script>
+    const apiUrl = "https://wxmvp2w2qi.execute-api.us-east-2.amazonaws.com/GeocodeAddress";
+
+    const markers = [
+      { name: "Location 1", lat: 44.310, lng: -79.540, price: "$365" },
+      { name: "Location 2", lat: 43.650, lng: -79.380, price: "$400" },
+      // Add more locations here
+    ];
+
+    // Initialize the map
+    const map = L.map("map").setView([44.3108138, -79.5415234], 10);
+
+    // Add OpenStreetMap tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    // Haversine formula to calculate distance
+    function haversine(lat1, lon1, lat2, lon2) {
+      const R = 6371; // Earth's radius in km
+      const toRad = angle => (angle * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+          Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c; // Distance in km
+    }
+
+    async function findClosestLocation() {
+      const address = document.getElementById("addressInput").value;
+
+      if (!address) {
+        alert("Please enter an address.");
+        return;
+      }
+
+      try {
+        // Call the geocoding API
+        const response = await fetch(`${apiUrl}?address=${encodeURIComponent(address)}`);
+        const data = await response.json();
+
+        if (data.lat && data.lng) {
+          let closestMarker = null;
+          let minDistance = Infinity;
+
+          // Find the closest marker
+          markers.forEach(marker => {
+            const distance = haversine(data.lat, data.lng, marker.lat, marker.lng);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestMarker = marker;
+            }
+          });
+
+          if (closestMarker) {
+            // Zoom to the user's geocoded address
+            map.setView([data.lat, data.lng], 14);
+
+            // Show popup for the closest marker
+            L.popup()
+              .setLatLng([data.lat, data.lng])
+              .setContent(
+                `<b>Your Address:</b> ${address}<br><b>Pricing:</b><br>Tanker: ${closestMarker.price}`
+              )
+              .openOn(map);
+          } else {
+            alert("No locations found near your address.");
+          }
+        } else {
+          alert("Unable to geocode the address. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error fetching geocoded data:", error);
+        alert("An error occurred. Please try again later.");
+      }
+    }
+  </script>
+</body>
+</html>
