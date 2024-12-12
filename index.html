@@ -54,20 +54,10 @@
 
   <script>
     const apiUrl = "https://wxmvp2w2qi.execute-api.us-east-2.amazonaws.com/GeocodeAddress";
+    const locationsUrl = "https://raw.githubusercontent.com/yanni312/pricing-map/main/locations.json";
 
     let currentFuelSurcharge = 0; // Initialize FSC
-
-    const markers = [
-      { name: "ANCASTER, ON", lat: 43.2084, lng: -80.0016, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      { name: "CAMPBELL RD, BRANT, ON", lat: 43.1182, lng: -80.1572, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      { name: "COPETOWN, ON", lat: 43.2434, lng: -80.0561, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      { name: "GREENVILLE, ON", lat: 43.2902, lng: -79.9974, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      { name: "LYNDEN, ON", lat: 43.2387, lng: -80.1475, tanker: "$365.00", large: "$195.00", small: "$130.00" },
-      { name: "BRANTFORD", lat: 43.1484, lng: -80.2102, tanker: "$410.00", large: "$235.00", small: "$150.00" },
-      { name: "DUNDAS", lat: 43.2746, lng: -79.9421, tanker: "$410.00", large: "$235.00", small: "$150.00" },
-      { name: "OAKVILLE", lat: 43.4761, lng: -79.6803, tanker: "$790.00", large: "$550.00", small: "$550.00" },
-      // Add remaining locations here...
-    ];
+    let markers = []; // Will hold the dynamically fetched locations
 
     const map = L.map("map").setView([43.1484, -80.2102], 10);
 
@@ -95,6 +85,18 @@
 
     // Call FSC calculation on load
     fetchFuelSurcharge();
+
+    // Fetch location data from JSON file
+    async function fetchLocations() {
+      try {
+        const response = await fetch(locationsUrl);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        markers = await response.json();
+        console.log("Fetched Locations:", markers); // Debugging log
+      } catch (error) {
+        console.error("Error fetching locations:", error);
+      }
+    }
 
     async function fetchAutocomplete(input) {
       try {
@@ -190,6 +192,9 @@
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c; // Distance in km
     }
+
+    // Fetch locations when the script is loaded
+    fetchLocations();
   </script>
 </body>
 </html>
