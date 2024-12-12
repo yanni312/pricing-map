@@ -8,10 +8,10 @@
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <!-- Link to your external CSS file -->
+  <!-- Corrected CSS Linking -->
   <link
     rel="stylesheet"
-    href="https://raw.githubusercontent.com/yanni312/pricing-map/main/styles.css"
+    href="./styles.css"
   />
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -73,7 +73,6 @@
       }
     }
 
-    // Fetch autocomplete suggestions
     async function fetchAutocomplete(input) {
       try {
         const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
