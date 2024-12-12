@@ -61,7 +61,7 @@
       { name: "ANCASTER, ON", lat: 43.2084, lng: -80.0016, tanker: "$365.00", large: "$195.00", small: "$130.00" },
       { name: "BRANTFORD", lat: 43.1484, lng: -80.2102, tanker: "$410.00", large: "$235.00", small: "$150.00" },
       { name: "OAKVILLE", lat: 43.4761, lng: -79.6803, tanker: "$790.00", large: "$550.00", small: "$550.00" },
-      // Add more locations here
+      // Add other locations as needed
     ];
 
     const map = L.map("map").setView([43.1484, -80.2102], 10);
@@ -91,6 +91,18 @@
     // Call FSC calculation on load
     fetchFuelSurcharge();
 
+    async function fetchSuggestions(input) {
+      try {
+        const response = await fetch(`${apiUrl}?action=autocomplete&input=${encodeURIComponent(input)}`);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        const suggestions = await response.json();
+        return suggestions;
+      } catch (error) {
+        console.error("Error fetching autocomplete suggestions:", error);
+        return [];
+      }
+    }
+
     async function fetchGeocode(address) {
       try {
         const response = await fetch(`${apiUrl}?address=${encodeURIComponent(address)}`);
@@ -99,6 +111,30 @@
         if (data.lat && data.lng) findClosestLocation(data.lat, data.lng, address);
       } catch (error) {
         console.error("Error fetching geocode data:", error);
+      }
+    }
+
+    function displaySuggestions(suggestions) {
+      const suggestionsList = document.getElementById("suggestions");
+      suggestionsList.innerHTML = "";
+
+      suggestions.forEach(suggestion => {
+        const li = document.createElement("li");
+        li.textContent = suggestion.description;
+        li.addEventListener("click", () => {
+          fetchGeocode(suggestion.description);
+          suggestionsList.innerHTML = ""; // Clear suggestions after selection
+          document.getElementById("addressInput").value = suggestion.description;
+        });
+        suggestionsList.appendChild(li);
+      });
+    }
+
+    async function handleInput(event) {
+      const input = event.target.value;
+      if (input.length > 2) {
+        const suggestions = await fetchSuggestions(input);
+        displaySuggestions(suggestions);
       }
     }
 
@@ -139,11 +175,6 @@
       }
     }
 
-    document.getElementById("addressInput").addEventListener("input", event => {
-      const input = event.target.value;
-      if (input.length > 2) fetchGeocode(input);
-    });
-
     function haversine(lat1, lon1, lat2, lon2) {
       const R = 6371; // Earth's radius in km
       const toRad = angle => (angle * Math.PI) / 180;
@@ -161,6 +192,8 @@
       console.log(`Calculated Distance: ${distance.toFixed(2)} km`);
       return distance;
     }
+
+    document.getElementById("addressInput").addEventListener("input", handleInput);
   </script>
 </body>
 </html>
